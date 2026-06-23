@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>ลงทะเบียนผู้มาติดต่อและผู้รับเหมา - EGAT อรอ.</title>
+<style>
+  :root {
+    --primary: #1d4ed8;
+    --primary-dark: #1e3a8a;
+    --success: #16a34a;
+    --danger: #dc2626;
+    --bg: #f1f5f9;
+    --card: #ffffff;
+    --text: #1e293b;
+    --muted: #64748b;
+    --border: #cbd5e1;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'Segoe UI', 'Sarabun', Tahoma, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px;
+  }
+  .header {
+    width: 100%;
+    max-width: 480px;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+  .header h1 {
+    font-size: 20px;
+    margin: 0 0 4px 0;
+    color: var(--primary-dark);
+  }
+  .header p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 14px;
+  }
+  .card {
+    width: 100%;
+    max-width: 480px;
+    background: var(--card);
+    border-radius: 16px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    padding: 24px;
+  }
+  .field { margin-bottom: 16px; }
+  label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--text);
+  }
+  label .req { color: var(--danger); }
+  input, select {
+    width: 100%;
+    padding: 12px 14px;
+    font-size: 16px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: #fff;
+    color: var(--text);
+  }
+  input:focus, select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(29,78,216,0.15);
+  }
+  .row2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  /* ===== ส่วนถ่ายรูป ===== */
+  .photo-section {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  .photo-frame {
+    width: 160px;
+    height: 160px;
+    margin: 0 auto 10px;
+    border-radius: 50%;
+    background: #e2e8f0;
+    border: 3px dashed var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+  }
+  .photo-frame img, .photo-frame video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .photo-frame .icon {
+    font-size: 48px;
+    color: #94a3b8;
+  }
+  .photo-buttons {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+  }
+  .btn-small {
+    padding: 10px 18px;
+    font-size: 14px;
+    border-radius: 999px;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .btn-camera { background: var(--primary); color: #fff; }
+  .btn-retake { background: #e2e8f0; color: var(--text); display: none; }
+  /* ===== ปุ่มหลัก ===== */
+  .submit-btn {
+    width: 100%;
+    padding: 16px;
+    font-size: 17px;
+    font-weight: 700;
+    color: #fff;
+    background: var(--primary);
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    margin-top: 8px;
+  }
+  .submit-btn:active { background: var(--primary-dark); }
+  .submit-btn:disabled { background: #94a3b8; cursor: not-allowed; }
+  .hint {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+  /* ===== หน้าสำเร็จ ===== */
+  .success-screen {
+    display: none;
+    text-align: center;
+    padding: 20px 0;
+  }
+  .success-screen .check {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    background: var(--success);
+    color: #fff;
+    font-size: 50px;
+    line-height: 90px;
+    margin: 0 auto 20px;
+  }
+  .success-screen h2 {
+    color: var(--success);
+    margin: 0 0 8px 0;
+  }
+  .success-screen p { color: var(--muted); margin: 4px 0; }
+  .success-name { font-size: 20px; font-weight: 700; color: var(--text); margin-top: 16px; }
+  .new-entry-btn {
+    margin-top: 24px;
+    background: #e2e8f0;
+    color: var(--text);
+    border: none;
+    padding: 12px 24px;
+    border-radius: 999px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  /* ===== Loading overlay ===== */
+  .overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.4);
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+  }
+  .spinner {
+    width: 50px; height: 50px;
+    border: 5px solid #fff;
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .error-box {
+    display: none;
+    background: #fee2e2;
+    color: var(--danger);
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 14px;
+    margin-bottom: 12px;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🏭 ลงทะเบียนผู้มาติดต่อและผู้รับเหมา</h1>
+  <p>การไฟฟ้าฝ่ายผลิตแห่งประเทศไทย (อรอ.)</p>
+</div>
+
+<div class="card">
+
+  <!-- ===== ฟอร์มลงทะเบียน ===== -->
+  <div id="formScreen">
+
+    <div class="error-box" id="errorBox"></div>
+
+    <!-- ถ่ายรูป -->
+    <div class="photo-section">
+      <div class="photo-frame" id="photoFrame">
+        <span class="icon">👤</span>
+      </div>
+      <div class="photo-buttons">
+        <button type="button" class="btn-small btn-camera" id="btnCamera">📷 ถ่ายรูป</button>
+        <button type="button" class="btn-small btn-retake" id="btnRetake">🔄 ถ่ายใหม่</button>
+      </div>
+      <div class="hint">กรุณาถ่ายรูปหน้าตรง เพื่อใช้แทนการเก็บบัตรประชาชน</div>
+    </div>
+
+    <form id="registerForm">
+      <div class="field">
+        <label>ชื่อ-นามสกุล <span class="req">*</span></label>
+        <input type="text" id="fullName" required placeholder="เช่น สมชาย ใจดี">
+      </div>
+
+      <div class="field">
+        <label>บริษัท / ผู้รับเหมา <span class="req">*</span></label>
+        <input type="text" id="company" required placeholder="ชื่อบริษัท">
+      </div>
+
+      <div class="field">
+        <label>เบอร์โทรศัพท์ <span class="req">*</span></label>
+        <input type="tel" id="phone" required placeholder="0xx-xxx-xxxx" pattern="[0-9-]{9,10}">
+      </div>
+
+      <div class="field">
+        <label>เลขบัตรประชาชน <span class="req">*</span></label>
+        <input type="text" id="idCard" required placeholder="กรอกเลข 13 หลัก" maxlength="13" pattern="[0-9]{13}" inputmode="numeric">
+        <div class="hint">กรอกเฉพาะตัวเลข ไม่ต้องเว้นขีด</div>
+      </div>
+
+      <div class="row2">
+        <div class="field">
+          <label>ทะเบียนรถ</label>
+          <input type="text" id="vehiclePlate" placeholder="เช่น กข-1234">
+        </div>
+        <div class="field">
+          <label>ประเภทรถ</label>
+          <select id="vehicleType">
+            <option value="">-- เลือก --</option>
+            <option value="รถยนต์ส่วนตัว">รถยนต์ส่วนตัว</option>
+            <option value="รถกระบะ/รถบรรทุก">รถกระบะ/รถบรรทุก</option>
+            <option value="รถตู้">รถตู้</option>
+            <option value="รถจักรยานยนต์">รถจักรยานยนต์</option>
+            <option value="ไม่มีรถ">ไม่มีรถ</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>ผู้ติดต่อ / หน่วยงานที่มาพบ <span class="req">*</span></label>
+        <input type="text" id="contactPerson" required placeholder="ชื่อผู้ติดต่อ หรือ ชื่อหน่วยงาน">
+      </div>
+
+      <button type="submit" class="submit-btn" id="submitBtn">✅ ทะเบียนเข้าพื้นที่</button>
+    </form>
+  </div>
+
+  <!-- ===== หน้าลงทะเบียนสำเร็จ ===== -->
+  <div class="success-screen" id="successScreen">
+    <div class="check">✓</div>
+    <h2>ลงทะเบียนสำเร็จ</h2>
+    <p>กรุณาแสดงหน้านี้ให้เจ้าหน้าที่ รปภ. ตรวจสอบ</p>
+    <div class="success-name" id="successName"></div>
+    <p id="successCompany"></p>
+    <p id="successTime"></p>
+    <button class="new-entry-btn" id="btnNewEntry">+ ลงทะเบียนคนต่อไป</button>
+  </div>
+
+</div>
+
+<!-- Loading Overlay -->
+<div class="overlay" id="overlay"><div class="spinner"></div></div>
+
+<script>
+/* =========================================================
+   ตั้งค่า: นำ URL ของ Google Apps Script Web App มาใส่ตรงนี้
+   (ได้จากขั้นตอน Deploy > New deployment ใน Apps Script)
+   ========================================================= */
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyJiBdiH-AN0V4uKy3DOB_VjieZ51g8XiKLQ4vloqtXS3jm5I4HAfsKoYcA8Q3K80szCA/exec";
+
+let capturedPhoto = ""; // เก็บรูปแบบ base64
+let stream = null;
+
+const photoFrame = document.getElementById('photoFrame');
+const btnCamera = document.getElementById('btnCamera');
+const btnRetake = document.getElementById('btnRetake');
+
+// ----- เปิดกล้อง -----
+btnCamera.addEventListener('click', async () => {
+  if (capturedPhoto) {
+    // ถ้ามีรูปอยู่แล้ว ปุ่มนี้ทำหน้าที่เป็นถ่ายใหม่ไปด้วย
+    capturedPhoto = "";
+  }
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "user" }, // กล้องหน้า (เซลฟี่)
+      audio: false
+    });
+    const video = document.createElement('video');
+    video.setAttribute('autoplay', '');
+    video.setAttribute('playsinline', '');
+    video.srcObject = stream;
+    photoFrame.innerHTML = '';
+    photoFrame.appendChild(video);
+
+    btnCamera.textContent = "📸 ถ่าย!";
+    btnCamera.onclick = () => capturePhoto(video);
+  } catch (err) {
+    showError("ไม่สามารถเปิดกล้องได้ กรุณาอนุญาตการใช้กล้องในเบราว์เซอร์ หรือลองใหม่อีกครั้ง");
+  }
+});
+
+function capturePhoto(video) {
+  const canvas = document.createElement('canvas');
+  // ลดขนาดรูปลงเพื่อให้ไฟล์เล็ก ส่งข้อมูลได้เสถียรขึ้น (กว้างไม่เกิน 480px)
+  const maxWidth = 480;
+  const scale = Math.min(1, maxWidth / video.videoWidth);
+  canvas.width = video.videoWidth * scale;
+  canvas.height = video.videoHeight * scale;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  capturedPhoto = canvas.toDataURL('image/jpeg', 0.6);
+
+  // หยุดกล้อง
+  if (stream) {
+    stream.getTracks().forEach(t => t.stop());
+    stream = null;
+  }
+
+  // แสดงรูปที่ถ่ายได้
+  photoFrame.innerHTML = '';
+  const img = document.createElement('img');
+  img.src = capturedPhoto;
+  photoFrame.appendChild(img);
+
+  // รีเซ็ตปุ่ม
+  btnCamera.textContent = "📷 ถ่ายรูป";
+  btnCamera.onclick = null;
+  btnCamera.style.display = 'none';
+  btnRetake.style.display = 'inline-block';
+}
+
+btnRetake.addEventListener('click', () => {
+  capturedPhoto = "";
+  photoFrame.innerHTML = '<span class="icon">👤</span>';
+  btnCamera.style.display = 'inline-block';
+  btnRetake.style.display = 'none';
+});
+
+// ----- ส่งฟอร์ม -----
+const form = document.getElementById('registerForm');
+const submitBtn = document.getElementById('submitBtn');
+const overlay = document.getElementById('overlay');
+const errorBox = document.getElementById('errorBox');
+
+function showError(msg) {
+  errorBox.textContent = msg;
+  errorBox.style.display = 'block';
+  window.scrollTo(0, 0);
+}
+function hideError() {
+  errorBox.style.display = 'none';
+}
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  hideError();
+
+  if (!capturedPhoto || capturedPhoto.length < 100) {
+    showError("กรุณาถ่ายรูปก่อนกดลงทะเบียน");
+    return;
+  }
+
+  const idCard = document.getElementById('idCard').value.trim();
+  if (idCard.length !== 13 || !/^\d{13}$/.test(idCard)) {
+    showError("กรุณากรอกเลขบัตรประชาชนให้ครบ 13 หลัก");
+    return;
+  }
+
+  const payload = {
+    fullName: document.getElementById('fullName').value.trim(),
+    company: document.getElementById('company').value.trim(),
+    phone: document.getElementById('phone').value.trim(),
+    idCard: idCard,
+    vehiclePlate: document.getElementById('vehiclePlate').value.trim(),
+    vehicleType: document.getElementById('vehicleType').value,
+    contactPerson: document.getElementById('contactPerson').value.trim(),
+    photoBase64: capturedPhoto
+  };
+
+  submitBtn.disabled = true;
+  overlay.style.display = 'flex';
+
+  try {
+    const res = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+    const result = await res.json();
+
+    if (result.result === 'success') {
+      showSuccessScreen(payload);
+    } else {
+      showError("เกิดข้อผิดพลาด: " + (result.message || "ไม่สามารถบันทึกข้อมูลได้"));
+      submitBtn.disabled = false;
+    }
+  } catch (err) {
+    showError("ไม่สามารถเชื่อมต่อระบบได้ กรุณาตรวจสอบอินเทอร์เน็ต แล้วลองใหม่อีกครั้ง");
+    submitBtn.disabled = false;
+  } finally {
+    overlay.style.display = 'none';
+  }
+});
+
+function showSuccessScreen(data) {
+  document.getElementById('formScreen').style.display = 'none';
+  document.getElementById('successScreen').style.display = 'block';
+  document.getElementById('successName').textContent = data.fullName;
+  document.getElementById('successCompany').textContent = "บริษัท " + data.company;
+  const now = new Date();
+  document.getElementById('successTime').textContent =
+    "เวลาลงทะเบียน " + now.toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'}) +
+    " น. วันที่ " + now.toLocaleDateString('th-TH');
+}
+
+document.getElementById('btnNewEntry').addEventListener('click', () => {
+  // รีเซ็ตฟอร์มทั้งหมดสำหรับคนต่อไป
+  form.reset();
+  capturedPhoto = "";
+  photoFrame.innerHTML = '<span class="icon">👤</span>';
+  btnCamera.style.display = 'inline-block';
+  btnRetake.style.display = 'none';
+  submitBtn.disabled = false;
+  document.getElementById('formScreen').style.display = 'block';
+  document.getElementById('successScreen').style.display = 'none';
+  hideError();
+});
+</script>
+
+</body>
+</html>
