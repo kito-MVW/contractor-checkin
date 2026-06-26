@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Visitor Registration - EGAT</title>
+<style>
+  :root {
+    --primary: #1d4ed8;
+    --primary-dark: #1e3a8a;
+    --success: #16a34a;
+    --danger: #dc2626;
+    --bg: #f1f5f9;
+    --card: #ffffff;
+    --text: #1e293b;
+    --muted: #64748b;
+    --border: #cbd5e1;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px;
+  }
+  .header {
+    width: 100%;
+    max-width: 480px;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+  .header h1 {
+    font-size: 20px;
+    margin: 0 0 4px 0;
+    color: var(--primary-dark);
+  }
+  .header p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 14px;
+  }
+  .card {
+    width: 100%;
+    max-width: 480px;
+    background: var(--card);
+    border-radius: 16px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    padding: 24px;
+  }
+  .field { margin-bottom: 16px; }
+  label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--text);
+  }
+  label .req { color: var(--danger); }
+  input, select {
+    width: 100%;
+    padding: 12px 14px;
+    font-size: 16px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: #fff;
+    color: var(--text);
+  }
+  input:focus, select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(29,78,216,0.15);
+  }
+  .row2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  /* ===== Photo section ===== */
+  .photo-section {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  .photo-frame {
+    width: 160px;
+    height: 160px;
+    margin: 0 auto 10px;
+    border-radius: 50%;
+    background: #e2e8f0;
+    border: 3px dashed var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+  }
+  .photo-frame img, .photo-frame video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .photo-frame .icon {
+    font-size: 48px;
+    color: #94a3b8;
+  }
+  .photo-buttons {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+  }
+  .btn-small {
+    padding: 10px 18px;
+    font-size: 14px;
+    border-radius: 999px;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .btn-camera { background: var(--primary); color: #fff; }
+  .btn-retake { background: #e2e8f0; color: var(--text); display: none; }
+  /* ===== Main button ===== */
+  .submit-btn {
+    width: 100%;
+    padding: 16px;
+    font-size: 17px;
+    font-weight: 700;
+    color: #fff;
+    background: var(--primary);
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    margin-top: 8px;
+  }
+  .submit-btn:active { background: var(--primary-dark); }
+  .submit-btn:disabled { background: #94a3b8; cursor: not-allowed; }
+  .hint {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+  /* ===== Success screen ===== */
+  .success-screen {
+    display: none;
+    text-align: center;
+    padding: 20px 0;
+  }
+  .success-screen .check {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    background: var(--success);
+    color: #fff;
+    font-size: 50px;
+    line-height: 90px;
+    margin: 0 auto 20px;
+  }
+  .success-screen h2 {
+    color: var(--success);
+    margin: 0 0 8px 0;
+  }
+  .success-screen p { color: var(--muted); margin: 4px 0; }
+  .success-name { font-size: 20px; font-weight: 700; color: var(--text); margin-top: 16px; }
+  .new-entry-btn {
+    margin-top: 24px;
+    background: #e2e8f0;
+    color: var(--text);
+    border: none;
+    padding: 12px 24px;
+    border-radius: 999px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  /* ===== Loading overlay ===== */
+  .overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.4);
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+  }
+  .spinner {
+    width: 50px; height: 50px;
+    border: 5px solid #fff;
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .error-box {
+    display: none;
+    background: #fee2e2;
+    color: var(--danger);
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 14px;
+    margin-bottom: 12px;
+  }
+  .footer-credit {
+    width: 100%;
+    max-width: 480px;
+    text-align: center;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--muted);
+    margin-top: 16px;
+    padding-bottom: 8px;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🏭 Visitor &amp; Contractor Registration</h1>
+  <p>Electricity Generating Authority of Thailand (EGAT)</p>
+</div>
+
+<div class="card">
+
+  <!-- ===== Registration form ===== -->
+  <div id="formScreen">
+
+    <div class="error-box" id="errorBox"></div>
+
+    <!-- Photo capture -->
+    <div class="photo-section">
+      <div class="photo-frame" id="photoFrame">
+        <span class="icon">👤</span>
+      </div>
+      <div class="photo-buttons">
+        <button type="button" class="btn-small btn-camera" id="btnCamera">📷 Take Photo</button>
+        <button type="button" class="btn-small btn-retake" id="btnRetake">🔄 Retake</button>
+      </div>
+      <div class="hint">Please take a clear front-facing photo. This is used instead of collecting your passport.</div>
+    </div>
+
+    <form id="registerForm">
+      <div class="field">
+        <label>Full Name <span class="req">*</span></label>
+        <input type="text" id="fullName" required placeholder="e.g. John Smith">
+      </div>
+
+      <div class="field">
+        <label>Company <span class="req">*</span></label>
+        <input type="text" id="company" required placeholder="Company name">
+      </div>
+
+      <div class="field">
+        <label>Phone Number <span class="req">*</span></label>
+        <input type="tel" id="phone" required placeholder="e.g. +66 8xxxxxxxx">
+      </div>
+
+      <div class="field">
+        <label>Passport Number <span class="req">*</span></label>
+        <input type="text" id="idCard" required placeholder="Enter passport number" maxlength="20">
+        <div class="hint">Letters and numbers as shown on your passport</div>
+      </div>
+
+      <div class="row2">
+        <div class="field">
+          <label>Vehicle Plate No.</label>
+          <input type="text" id="vehiclePlate" placeholder="e.g. AB-1234">
+        </div>
+        <div class="field">
+          <label>Vehicle Type</label>
+          <select id="vehicleType">
+            <option value="">-- Select --</option>
+            <option value="Private car">Private car</option>
+            <option value="Pickup/Truck">Pickup / Truck</option>
+            <option value="Van">Van</option>
+            <option value="Motorcycle">Motorcycle</option>
+            <option value="No vehicle">No vehicle</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Contact Person / Department <span class="req">*</span></label>
+        <input type="text" id="contactPerson" required placeholder="Name of contact person or department">
+      </div>
+
+      <button type="submit" class="submit-btn" id="submitBtn">✅ Register Entry</button>
+    </form>
+  </div>
+
+  <!-- ===== Success screen ===== -->
+  <div class="success-screen" id="successScreen">
+    <div class="check">✓</div>
+    <h2>Registration Successful</h2>
+    <p>Please show this screen to the security officer</p>
+    <div class="success-name" id="successName"></div>
+    <p id="successCompany"></p>
+    <p id="successTime"></p>
+    <button class="new-entry-btn" id="btnNewEntry">+ Register Next Person</button>
+  </div>
+
+</div>
+
+<div class="footer-credit">Prepared by หปออ-ธ. Department, Tel. 2205</div>
+
+<div class="overlay" id="overlay"><div class="spinner"></div></div>
+
+<script>
+/* =========================================================
+   CONFIG: Same Google Apps Script Web App URL as index.html
+   ========================================================= */
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz8SiP0ttRHg_Ma3eiTCuf7ZyKoz2YPbwrA_ASPqouipKPCNHr0-pkWWzYqPlZ_PMcMMg/exec";
+
+let capturedPhoto = ""; // base64 photo data
+let stream = null;
+let currentVideo = null;     // currently active video element (if any)
+let cameraMode = "idle";     // camera button state: idle | live
+
+const photoFrame = document.getElementById('photoFrame');
+const btnCamera = document.getElementById('btnCamera');
+const btnRetake = document.getElementById('btnRetake');
+
+// ----- Camera button: handles both "open camera" and "capture" -----
+btnCamera.addEventListener('click', async () => {
+  if (cameraMode === "idle") {
+    await openCamera();
+  } else if (cameraMode === "live") {
+    capturePhoto();
+  }
+});
+
+async function openCamera() {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "user" }, // front camera (selfie)
+      audio: false
+    });
+    const video = document.createElement('video');
+    video.setAttribute('autoplay', '');
+    video.setAttribute('playsinline', '');
+    video.srcObject = stream;
+    photoFrame.innerHTML = '';
+    photoFrame.appendChild(video);
+    currentVideo = video;
+
+    btnCamera.textContent = "📸 Capture!";
+    cameraMode = "live";
+  } catch (err) {
+    showError("Unable to access camera. Please allow camera permission in your browser and try again.");
+  }
+}
+
+function capturePhoto() {
+  if (!currentVideo) return;
+
+  const canvas = document.createElement('canvas');
+  // Resize photo to keep file size small and the upload reliable (max width 480px)
+  const maxWidth = 480;
+  const scale = Math.min(1, maxWidth / currentVideo.videoWidth);
+  canvas.width = currentVideo.videoWidth * scale;
+  canvas.height = currentVideo.videoHeight * scale;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(currentVideo, 0, 0, canvas.width, canvas.height);
+  capturedPhoto = canvas.toDataURL('image/jpeg', 0.6);
+
+  // Stop camera
+  if (stream) {
+    stream.getTracks().forEach(t => t.stop());
+    stream = null;
+  }
+  currentVideo = null;
+
+  // Show captured still photo
+  photoFrame.innerHTML = '';
+  const img = document.createElement('img');
+  img.src = capturedPhoto;
+  photoFrame.appendChild(img);
+
+  // Reset button state and show "Retake" instead
+  btnCamera.textContent = "📷 Take Photo";
+  cameraMode = "idle";
+  btnCamera.style.display = 'none';
+  btnRetake.style.display = 'inline-block';
+}
+
+btnRetake.addEventListener('click', () => {
+  capturedPhoto = "";
+  cameraMode = "idle";
+  photoFrame.innerHTML = '<span class="icon">👤</span>';
+  btnCamera.style.display = 'inline-block';
+  btnRetake.style.display = 'none';
+});
+
+// ----- Submit form -----
+const form = document.getElementById('registerForm');
+const submitBtn = document.getElementById('submitBtn');
+const overlay = document.getElementById('overlay');
+const errorBox = document.getElementById('errorBox');
+
+function showError(msg) {
+  errorBox.textContent = msg;
+  errorBox.style.display = 'block';
+  window.scrollTo(0, 0);
+}
+function hideError() {
+  errorBox.style.display = 'none';
+}
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  hideError();
+
+  if (!capturedPhoto || capturedPhoto.length < 100) {
+    showError("Please take a photo before submitting.");
+    return;
+  }
+
+  const idCard = document.getElementById('idCard').value.trim();
+  if (idCard.length < 4) {
+    showError("Please enter a valid passport number.");
+    return;
+  }
+
+  const payload = {
+    fullName: document.getElementById('fullName').value.trim(),
+    company: document.getElementById('company').value.trim(),
+    phone: document.getElementById('phone').value.trim(),
+    idCard: idCard,
+    vehiclePlate: document.getElementById('vehiclePlate').value.trim(),
+    vehicleType: document.getElementById('vehicleType').value,
+    contactPerson: document.getElementById('contactPerson').value.trim(),
+    photoBase64: capturedPhoto
+  };
+
+  submitBtn.disabled = true;
+  overlay.style.display = 'flex';
+
+  try {
+    const res = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+    const result = await res.json();
+
+    if (result.result === 'success') {
+      showSuccessScreen(payload);
+    } else {
+      showError("Error: " + (result.message || "Could not save your data."));
+      submitBtn.disabled = false;
+    }
+  } catch (err) {
+    showError("Could not connect to the system. Please check your internet connection and try again.");
+    submitBtn.disabled = false;
+  } finally {
+    overlay.style.display = 'none';
+  }
+});
+
+function showSuccessScreen(data) {
+  document.getElementById('formScreen').style.display = 'none';
+  document.getElementById('successScreen').style.display = 'block';
+  document.getElementById('successName').textContent = data.fullName;
+  document.getElementById('successCompany').textContent = "Company: " + data.company;
+  const now = new Date();
+  document.getElementById('successTime').textContent =
+    "Registered at " + now.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'}) +
+    " on " + now.toLocaleDateString('en-US');
+}
+
+document.getElementById('btnNewEntry').addEventListener('click', () => {
+  // Reset the whole form for the next person
+  form.reset();
+  capturedPhoto = "";
+  cameraMode = "idle";
+  btnCamera.textContent = "📷 Take Photo";
+  photoFrame.innerHTML = '<span class="icon">👤</span>';
+  btnCamera.style.display = 'inline-block';
+  btnRetake.style.display = 'none';
+  submitBtn.disabled = false;
+  document.getElementById('formScreen').style.display = 'block';
+  document.getElementById('successScreen').style.display = 'none';
+  hideError();
+});
+</script>
+
+</body>
+</html>
