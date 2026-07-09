@@ -211,6 +211,68 @@
     margin-top: 16px;
     padding-bottom: 8px;
   }
+  /* ===== Privacy Notice & Consent ===== */
+  .privacy-box {
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .privacy-toggle {
+    width: 100%;
+    background: #eef2ff;
+    border: none;
+    padding: 12px 14px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--primary-dark);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+  }
+  .privacy-toggle .arrow { transition: transform 0.2s; }
+  .privacy-toggle.open .arrow { transform: rotate(180deg); }
+  .privacy-content {
+    display: none;
+    padding: 14px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text);
+    max-height: 240px;
+    overflow-y: auto;
+    border-top: 1px solid var(--border);
+  }
+  .privacy-content.open { display: block; }
+  .privacy-content h4 {
+    margin: 12px 0 4px 0;
+    font-size: 13px;
+    color: var(--primary-dark);
+  }
+  .privacy-content h4:first-child { margin-top: 0; }
+  .privacy-content ul { margin: 4px 0; padding-left: 20px; }
+  .consent-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    background: #fff;
+  }
+  .consent-row input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    margin-top: 2px;
+    flex-shrink: 0;
+    accent-color: var(--primary);
+  }
+  .consent-row label {
+    font-size: 13px;
+    font-weight: 500;
+    margin: 0;
+    color: var(--text);
+    cursor: pointer;
+  }
 </style>
 </head>
 <body>
@@ -284,7 +346,41 @@
         <input type="text" id="contactPerson" required placeholder="Name of contact person or department">
       </div>
 
-      <button type="submit" class="submit-btn" id="submitBtn">✅ Register Entry</button>
+      <!-- ===== Privacy Notice + Consent (PDPA) ===== -->
+      <div class="privacy-box">
+        <button type="button" class="privacy-toggle" id="privacyToggle">
+          <span>🔒 Personal Data Privacy Notice (please read before consenting)</span>
+          <span class="arrow">▾</span>
+        </button>
+        <div class="privacy-content" id="privacyContent">
+          <h4>Purpose of Data Collection</h4>
+          <p>To verify the identity of visitors and contractors before entering the site, in place of physically holding your passport at the security checkpoint, and to enable investigation in case of a security incident on EGAT premises.</p>
+
+          <h4>Data Collected</h4>
+          <ul>
+            <li>Full name, company/organization, phone number</li>
+            <li>Passport number / national ID number</li>
+            <li>Facial photograph</li>
+            <li>Vehicle plate and type (if applicable)</li>
+            <li>Date and time of entry</li>
+          </ul>
+
+          <h4>Retention Period</h4>
+          <p>Your data will be retained for no more than <b>90 days</b> from the date of registration, after which it will be deleted, unless retention is required for an ongoing investigation.</p>
+
+          <h4>Data Controller</h4>
+          <p>Electricity Generating Authority of Thailand (EGAT), Nong Chok Office, Tel. 2205</p>
+
+          <h4>Your Rights</h4>
+          <p>You have the right to request access to, correction of, or deletion of your personal data under Thailand's Personal Data Protection Act (PDPA) B.E. 2562, by contacting the data controller above.</p>
+        </div>
+        <div class="consent-row">
+          <input type="checkbox" id="consentCheckbox">
+          <label for="consentCheckbox">I have read and consent to the collection of my personal data above for site security purposes <span class="req">*</span></label>
+        </div>
+      </div>
+
+      <button type="submit" class="submit-btn" id="submitBtn" disabled>✅ Register Entry</button>
     </form>
   </div>
 
@@ -391,6 +487,15 @@ btnRetake.addEventListener('click', () => {
   btnRetake.style.display = 'none';
 });
 
+// ----- Privacy Notice: expand/collapse details -----
+const privacyToggle = document.getElementById('privacyToggle');
+const privacyContent = document.getElementById('privacyContent');
+privacyToggle.addEventListener('click', () => {
+  privacyToggle.classList.toggle('open');
+  privacyContent.classList.toggle('open');
+});
+const consentCheckbox = document.getElementById('consentCheckbox');
+
 // ----- Submit form -----
 const form = document.getElementById('registerForm');
 const submitBtn = document.getElementById('submitBtn');
@@ -406,9 +511,19 @@ function hideError() {
   errorBox.style.display = 'none';
 }
 
+// Enable/disable submit button based on consent state
+consentCheckbox.addEventListener('change', () => {
+  submitBtn.disabled = !consentCheckbox.checked;
+});
+
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
   hideError();
+
+  if (!consentCheckbox.checked) {
+    showError("Please read and consent to the personal data collection notice before registering.");
+    return;
+  }
 
   if (!capturedPhoto || capturedPhoto.length < 100) {
     showError("Please take a photo before submitting.");
@@ -446,11 +561,11 @@ form.addEventListener('submit', async (e) => {
       showSuccessScreen(payload);
     } else {
       showError("Error: " + (result.message || "Could not save your data."));
-      submitBtn.disabled = false;
+      submitBtn.disabled = !consentCheckbox.checked;
     }
   } catch (err) {
     showError("Could not connect to the system. Please check your internet connection and try again.");
-    submitBtn.disabled = false;
+    submitBtn.disabled = !consentCheckbox.checked;
   } finally {
     overlay.style.display = 'none';
   }
@@ -476,7 +591,10 @@ document.getElementById('btnNewEntry').addEventListener('click', () => {
   photoFrame.innerHTML = '<span class="icon">👤</span>';
   btnCamera.style.display = 'inline-block';
   btnRetake.style.display = 'none';
-  submitBtn.disabled = false;
+  consentCheckbox.checked = false;
+  submitBtn.disabled = true; // must re-consent for the next person
+  privacyToggle.classList.remove('open');
+  privacyContent.classList.remove('open');
   document.getElementById('formScreen').style.display = 'block';
   document.getElementById('successScreen').style.display = 'none';
   hideError();
