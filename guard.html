@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>รายชื่อผู้ลงทะเบียนวันนี้ - รปภ. EGAT อรอ.</title>
+<meta name="robots" content="noindex, nofollow">
+<title>รายชื่อผู้ลงทะเบียน - รปภ. EGAT อรอ.</title>
 <style>
   :root {
     --primary: #1d4ed8;
@@ -41,6 +42,40 @@
     font-size: 13px;
     color: var(--muted);
   }
+  .date-picker-bar {
+    max-width: 900px;
+    margin: 0 auto 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--card);
+    border-radius: 12px;
+    padding: 12px 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+  .date-picker-bar label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+  }
+  .date-picker-bar input[type="date"] {
+    padding: 8px 10px;
+    font-size: 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+  }
+  .today-btn {
+    background: #e2e8f0;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--text);
+  }
   .status-bar {
     max-width: 900px;
     margin: 0 auto 16px;
@@ -51,6 +86,8 @@
     border-radius: 12px;
     padding: 12px 16px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    flex-wrap: wrap;
+    gap: 8px;
   }
   .count-badge {
     background: var(--primary);
@@ -68,6 +105,7 @@
     margin-right: 6px;
     animation: pulse 1.5s infinite;
   }
+  .live-dot.paused { background: var(--muted); animation: none; }
   @keyframes pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.3; }
@@ -164,13 +202,19 @@
 
 <div class="header">
   <div>
-    <h1>👮 รายชื่อผู้ลงทะเบียนวันนี้</h1>
+    <h1>👮 รายชื่อผู้ลงทะเบียน</h1>
     <div class="sub" id="todayDate">EGAT อรอ.</div>
   </div>
 </div>
 
+<div class="date-picker-bar">
+  <label for="datePicker">📅 เลือกวันที่ต้องการดู:</label>
+  <input type="date" id="datePicker">
+  <button class="today-btn" id="btnToday">กลับไปวันนี้</button>
+</div>
+
 <div class="status-bar">
-  <div><span class="live-dot"></span><b>อัปเดตสด</b> ทุก 15 วินาที</div>
+  <div><span class="live-dot" id="liveDot"></span><b id="liveLabel">อัปเดตสด</b> ทุก 15 วินาที</div>
   <div class="count-badge" id="countBadge">0 คน</div>
   <button class="refresh-btn" id="refreshBtn">🔄 รีเฟรชตอนนี้</button>
 </div>
@@ -194,17 +238,67 @@ const listContainer = document.getElementById('listContainer');
 const countBadge = document.getElementById('countBadge');
 const lastUpdated = document.getElementById('lastUpdated');
 const todayDateEl = document.getElementById('todayDate');
+const datePicker = document.getElementById('datePicker');
+const liveDot = document.getElementById('liveDot');
+const liveLabel = document.getElementById('liveLabel');
 
-// แสดงวันที่วันนี้
-todayDateEl.textContent = "วันที่ " + new Date().toLocaleDateString('th-TH', {
-  year: 'numeric', month: 'long', day: 'numeric'
-});
+let autoRefreshTimer = null;
+
+// ----- ตัวช่วยเรื่องวันที่ -----
+function todayISO() {
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return yyyy + '-' + mm + '-' + dd;
+}
+
+// แปลง "YYYY-MM-DD" (ค่าจาก <input type=date>) -> "DD/MM/YYYY" (รูปแบบที่ Apps Script ใช้เทียบ)
+function isoToThaiFormat(isoStr) {
+  const [y, m, d] = isoStr.split('-');
+  return d + '/' + m + '/' + y;
+}
+
+function isViewingToday() {
+  return datePicker.value === todayISO();
+}
+
+// ----- มาสก์เลขบัตรประชาชน/พาสปอร์ต -----
+// ตัวอย่าง: 1234567891234 -> 1234XXXXX1234 (โชว์ 4 หลักแรก + 4 หลักท้าย ที่เหลือมาสก์)
+function maskIdCard(id) {
+  if (!id) return '-';
+  const str = String(id).trim();
+  if (str.length <= 4) return str; // สั้นเกินกว่าจะมาสก์อย่างมีความหมาย
+  if (str.length >= 8) {
+    const first = str.slice(0, 4);
+    const last = str.slice(-4);
+    const middleLen = str.length - 8;
+    return first + 'X'.repeat(middleLen) + last;
+  }
+  // กรณีสั้นกว่า 8 หลัก (เช่นบางพาสปอร์ต) โชว์หัวท้ายอย่างละ 2
+  const first = str.slice(0, 2);
+  const last = str.slice(-2);
+  const middleLen = str.length - 4;
+  return first + 'X'.repeat(Math.max(middleLen, 1)) + last;
+}
+
+// ตั้งค่าเริ่มต้น = วันนี้
+datePicker.value = todayISO();
+updateHeaderDateLabel();
+
+function updateHeaderDateLabel() {
+  const [y, m, d] = datePicker.value.split('-');
+  const dateObj = new Date(y, m - 1, d);
+  const label = dateObj.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
+  todayDateEl.textContent = "วันที่ " + label + (isViewingToday() ? "" : " (ย้อนหลัง)");
+}
 
 /**
  * โหลดข้อมูลด้วยวิธี JSONP (เลี่ยงปัญหา CORS เวลาเรียกข้าม domain
  * จาก GitHub Pages ไปยัง Google Apps Script)
  */
 function loadData() {
+  const selectedDateThai = isoToThaiFormat(datePicker.value);
   const callbackName = 'cb_' + Date.now();
   window[callbackName] = function(response) {
     if (response.result === 'success') {
@@ -218,7 +312,7 @@ function loadData() {
   };
 
   const script = document.createElement('script');
-  script.src = SCRIPT_URL + '?action=todayList&callback=' + callbackName;
+  script.src = SCRIPT_URL + '?action=todayList&date=' + encodeURIComponent(selectedDateThai) + '&callback=' + callbackName;
   script.onerror = function() {
     listContainer.innerHTML = '<div class="empty-state"><div class="icon">⚠️</div><div>เชื่อมต่อระบบไม่ได้ กรุณาตรวจสอบอินเทอร์เน็ต</div></div>';
   };
@@ -229,7 +323,7 @@ function renderList(data) {
   countBadge.textContent = data.length + " คน";
 
   if (data.length === 0) {
-    listContainer.innerHTML = '<div class="empty-state"><div class="icon">📋</div><div>ยังไม่มีผู้ลงทะเบียนวันนี้</div></div>';
+    listContainer.innerHTML = '<div class="empty-state"><div class="icon">📋</div><div>ไม่มีผู้ลงทะเบียนในวันที่เลือก</div></div>';
     return;
   }
 
@@ -251,7 +345,7 @@ function renderList(data) {
             <span><b>โทร:</b> ${escapeHtml(p.phone)}</span>
           </div>
           <div class="info-row">
-            <span><b>เลขบัตรประชาชน:</b> ${escapeHtml(p.idCard)}</span>
+            <span><b>เลขบัตรประชาชน:</b> ${escapeHtml(maskIdCard(p.idCard))}</span>
           </div>
           <div class="info-row">
             <span><b>ทะเบียนรถ:</b> ${escapeHtml(p.vehiclePlate || '-')}</span>
@@ -283,14 +377,41 @@ function escapeHtml(str) {
     .replace(/>/g, '&gt;');
 }
 
+// ----- ควบคุมการรีเฟรชอัตโนมัติ: เปิดเฉพาะตอนดู "วันนี้" เท่านั้น -----
+function setupAutoRefresh() {
+  if (autoRefreshTimer) {
+    clearInterval(autoRefreshTimer);
+    autoRefreshTimer = null;
+  }
+  if (isViewingToday()) {
+    liveDot.classList.remove('paused');
+    liveLabel.textContent = "อัปเดตสด";
+    autoRefreshTimer = setInterval(loadData, 15000);
+  } else {
+    liveDot.classList.add('paused');
+    liveLabel.textContent = "ดูข้อมูลย้อนหลัง (ไม่อัปเดตอัตโนมัติ)";
+  }
+}
+
+// ----- Event listeners -----
+datePicker.addEventListener('change', function() {
+  updateHeaderDateLabel();
+  loadData();
+  setupAutoRefresh();
+});
+
+document.getElementById('btnToday').addEventListener('click', function() {
+  datePicker.value = todayISO();
+  updateHeaderDateLabel();
+  loadData();
+  setupAutoRefresh();
+});
+
+document.getElementById('refreshBtn').addEventListener('click', loadData);
+
 // โหลดครั้งแรก
 loadData();
-
-// รีเฟรชอัตโนมัติทุก 15 วินาที
-setInterval(loadData, 15000);
-
-// ปุ่มรีเฟรชเอง
-document.getElementById('refreshBtn').addEventListener('click', loadData);
+setupAutoRefresh();
 </script>
 
 </body>
