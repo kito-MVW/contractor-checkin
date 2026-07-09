@@ -211,6 +211,68 @@
     margin-top: 16px;
     padding-bottom: 8px;
   }
+  /* ===== Privacy Notice & Consent ===== */
+  .privacy-box {
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .privacy-toggle {
+    width: 100%;
+    background: #eef2ff;
+    border: none;
+    padding: 12px 14px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--primary-dark);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+  }
+  .privacy-toggle .arrow { transition: transform 0.2s; }
+  .privacy-toggle.open .arrow { transform: rotate(180deg); }
+  .privacy-content {
+    display: none;
+    padding: 14px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text);
+    max-height: 240px;
+    overflow-y: auto;
+    border-top: 1px solid var(--border);
+  }
+  .privacy-content.open { display: block; }
+  .privacy-content h4 {
+    margin: 12px 0 4px 0;
+    font-size: 13px;
+    color: var(--primary-dark);
+  }
+  .privacy-content h4:first-child { margin-top: 0; }
+  .privacy-content ul { margin: 4px 0; padding-left: 20px; }
+  .consent-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    background: #fff;
+  }
+  .consent-row input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    margin-top: 2px;
+    flex-shrink: 0;
+    accent-color: var(--primary);
+  }
+  .consent-row label {
+    font-size: 13px;
+    font-weight: 500;
+    margin: 0;
+    color: var(--text);
+    cursor: pointer;
+  }
 </style>
 </head>
 <body>
@@ -284,7 +346,41 @@
         <input type="text" id="contactPerson" required placeholder="ชื่อผู้ติดต่อ หรือ ชื่อหน่วยงาน">
       </div>
 
-      <button type="submit" class="submit-btn" id="submitBtn">✅ ลงทะเบียนเข้าพื้นที่</button>
+      <!-- ===== Privacy Notice + Consent (PDPA) ===== -->
+      <div class="privacy-box">
+        <button type="button" class="privacy-toggle" id="privacyToggle">
+          <span>🔒 คำประกาศเกี่ยวกับข้อมูลส่วนบุคคล (อ่านก่อนกดยินยอม)</span>
+          <span class="arrow">▾</span>
+        </button>
+        <div class="privacy-content" id="privacyContent">
+          <h4>วัตถุประสงค์ในการเก็บข้อมูล</h4>
+          <p>เพื่อยืนยันตัวบุคคลของผู้มาติดต่อ/ผู้รับเหมาก่อนเข้าพื้นที่ ทดแทนการเก็บบัตรประชาชนจริงที่ป้อม รปภ. และเพื่อใช้ตรวจสอบย้อนหลังกรณีเกิดเหตุด้านความปลอดภัยภายในพื้นที่ของ กฟผ.</p>
+
+          <h4>ข้อมูลที่จัดเก็บ</h4>
+          <ul>
+            <li>ชื่อ-นามสกุล, บริษัท/หน่วยงาน, เบอร์โทรศัพท์</li>
+            <li>เลขบัตรประชาชน / เลขพาสปอร์ต</li>
+            <li>รูปถ่ายใบหน้า</li>
+            <li>ทะเบียนรถ, ประเภทรถ (ถ้ามี)</li>
+            <li>วันเวลาที่เข้าพื้นที่</li>
+          </ul>
+
+          <h4>ระยะเวลาจัดเก็บ</h4>
+          <p>ข้อมูลจะถูกจัดเก็บไว้ไม่เกิน <b>90 วัน</b> นับจากวันที่ลงทะเบียน หลังจากนั้นจะถูกลบออกจากระบบ เว้นแต่มีความจำเป็นต้องเก็บไว้เพื่อการสอบสวนเหตุการณ์ที่เกี่ยวข้อง</p>
+
+          <h4>ผู้ควบคุมข้อมูลส่วนบุคคล</h4>
+          <p>การไฟฟ้าฝ่ายผลิตแห่งประเทศไทย (กฟผ.) แผนก หปออ-ธ. โทร. 2205</p>
+
+          <h4>สิทธิของเจ้าของข้อมูล</h4>
+          <p>ท่านมีสิทธิขอเข้าถึง แก้ไข หรือขอให้ลบข้อมูลส่วนบุคคลของท่านได้ ตามพระราชบัญญัติคุ้มครองข้อมูลส่วนบุคคล พ.ศ. 2562 (PDPA) โดยติดต่อผู้ควบคุมข้อมูลตามช่องทางข้างต้น</p>
+        </div>
+        <div class="consent-row">
+          <input type="checkbox" id="consentCheckbox">
+          <label for="consentCheckbox">ข้าพเจ้าได้อ่านและยินยอมให้จัดเก็บข้อมูลส่วนบุคคลข้างต้น เพื่อวัตถุประสงค์ด้านความปลอดภัยในการเข้าพื้นที่ <span class="req">*</span></label>
+        </div>
+      </div>
+
+      <button type="submit" class="submit-btn" id="submitBtn" disabled>✅ ลงทะเบียนเข้าพื้นที่</button>
     </form>
   </div>
 
@@ -393,6 +489,17 @@ btnRetake.addEventListener('click', () => {
   btnRetake.style.display = 'none';
 });
 
+// ----- Privacy Notice: เปิด/ปิดกล่องรายละเอียด -----
+const privacyToggle = document.getElementById('privacyToggle');
+const privacyContent = document.getElementById('privacyContent');
+privacyToggle.addEventListener('click', () => {
+  privacyToggle.classList.toggle('open');
+  privacyContent.classList.toggle('open');
+});
+
+// ----- Consent checkbox: ต้องติ๊กก่อนถึงจะกดปุ่มลงทะเบียนได้ -----
+const consentCheckbox = document.getElementById('consentCheckbox');
+
 // ----- ส่งฟอร์ม -----
 const form = document.getElementById('registerForm');
 const submitBtn = document.getElementById('submitBtn');
@@ -408,9 +515,19 @@ function hideError() {
   errorBox.style.display = 'none';
 }
 
+// เปิด/ปิดปุ่มลงทะเบียนตามสถานะการติ๊กยินยอม
+consentCheckbox.addEventListener('change', () => {
+  submitBtn.disabled = !consentCheckbox.checked;
+});
+
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
   hideError();
+
+  if (!consentCheckbox.checked) {
+    showError("กรุณาอ่านและติ๊กยินยอมให้จัดเก็บข้อมูลส่วนบุคคลก่อนลงทะเบียน");
+    return;
+  }
 
   if (!capturedPhoto || capturedPhoto.length < 100) {
     showError("กรุณาถ่ายรูปก่อนกดลงทะเบียน");
@@ -448,11 +565,11 @@ form.addEventListener('submit', async (e) => {
       showSuccessScreen(payload);
     } else {
       showError("เกิดข้อผิดพลาด: " + (result.message || "ไม่สามารถบันทึกข้อมูลได้"));
-      submitBtn.disabled = false;
+      submitBtn.disabled = !consentCheckbox.checked;
     }
   } catch (err) {
     showError("ไม่สามารถเชื่อมต่อระบบได้ กรุณาตรวจสอบอินเทอร์เน็ต แล้วลองใหม่อีกครั้ง");
-    submitBtn.disabled = false;
+    submitBtn.disabled = !consentCheckbox.checked;
   } finally {
     overlay.style.display = 'none';
   }
@@ -478,7 +595,10 @@ document.getElementById('btnNewEntry').addEventListener('click', () => {
   photoFrame.innerHTML = '<span class="icon">👤</span>';
   btnCamera.style.display = 'inline-block';
   btnRetake.style.display = 'none';
-  submitBtn.disabled = false;
+  consentCheckbox.checked = false;
+  submitBtn.disabled = true; // ต้องติ๊กยินยอมใหม่ทุกครั้งสำหรับคนถัดไป
+  privacyToggle.classList.remove('open');
+  privacyContent.classList.remove('open');
   document.getElementById('formScreen').style.display = 'block';
   document.getElementById('successScreen').style.display = 'none';
   hideError();
